@@ -154,13 +154,14 @@ module Portfolios
       existing_overrides = {}
       portfolio.portfolio_skills.includes(:assessor_override).each do |ps|
         if ps.assessor_override
-          key = ps.skill_id.presence || ps.skill_label.to_s.downcase
-          existing_overrides[key] = {
+          override_data = {
             override_level: ps.assessor_override.override_level,
             assessor_notes: ps.assessor_override.assessor_notes,
             overridden_by:  ps.assessor_override.overridden_by,
             overridden_at:  ps.assessor_override.overridden_at
           }
+          existing_overrides[ps.skill_id] = override_data if ps.skill_id.present?
+          existing_overrides[ps.skill_label.to_s.downcase] = override_data if ps.skill_label.present?
         end
       end
 
@@ -216,8 +217,8 @@ module Portfolios
     end
 
     def relink_override(portfolio_skill, existing_overrides)
-      key = portfolio_skill.skill_id.presence || portfolio_skill.skill_label.to_s.downcase
-      prev = existing_overrides[key]
+      prev = (portfolio_skill.skill_id.present? && existing_overrides[portfolio_skill.skill_id]) ||
+             existing_overrides[portfolio_skill.skill_label.to_s.downcase]
       return unless prev
 
       portfolio_skill.create_assessor_override!(

@@ -137,8 +137,10 @@ export default function FitGapReportPage() {
           : new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `fitgap-${session?.candidate_name ? session.candidate_name.toLowerCase().replace(/\s+/g, '-') : sessionId}-${vacancyId}.${ext}`;
+      const safeSlug = session?.candidate_name
+        ? session.candidate_name.toLowerCase().replace(/[^a-z0-9_-]/gi, "-").replace(/-+/g, "-")
+        : sessionId;
+      a.download = `fitgap-${safeSlug}-${vacancyId}.${ext}`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {

@@ -128,8 +128,10 @@ export default function PortfolioPage() {
           : new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `portfolio-${candidateName ? candidateName.toLowerCase().replace(/\s+/g, '-') : sessionId}.${ext}`;
+      const safeSlug = candidateName
+        ? candidateName.toLowerCase().replace(/[^a-z0-9_-]/gi, "-").replace(/-+/g, "-")
+        : sessionId;
+      a.download = `portfolio-${safeSlug}.${ext}`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
