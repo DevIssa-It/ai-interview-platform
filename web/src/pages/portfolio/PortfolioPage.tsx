@@ -80,8 +80,17 @@ export default function PortfolioPage() {
       }
       setVacancies(vRes.data.vacancies || []);
       setCandidateName(sRes.data.session?.candidate_name ?? null);
-    } catch {
-      setErrorMessage("Failed to load interview context. Please check your connection.");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 404) {
+        setErrorMessage("Interview session or portfolio not found (404).");
+      } else if (status === 403) {
+        setErrorMessage("Access denied. You do not have permission to view this portfolio (403).");
+      } else if (status === 422) {
+        setErrorMessage("Invalid request parameters for this portfolio (422).");
+      } else {
+        setErrorMessage("Failed to load interview context. Please check your connection.");
+      }
     } finally {
       setLoading(false);
     }
@@ -138,14 +147,15 @@ export default function PortfolioPage() {
     );
   }
 
+  const isSkillUnassessed = (s: any) =>
+    s.ai_level === 0 ||
+    ((!s.evidence || s.evidence.length === 0) &&
+      (s.ai_confidence === "low" || (s.competency_summary || "").toLowerCase().includes("not probed")));
+
   const configuredSkills = portfolio?.skills.filter((s) => !s.is_discovered) || [];
   const discoveredSkills = portfolio?.skills.filter((s) => s.is_discovered) || [];
-  const unassessedSkills = configuredSkills.filter(
-    (s) => s.evidence.length === 0 && s.competency_summary.includes("not probed")
-  );
-  const assessedSkills = configuredSkills.filter(
-    (s) => !(s.evidence.length === 0 && s.competency_summary.includes("not probed"))
-  );
+  const unassessedSkills = configuredSkills.filter(isSkillUnassessed);
+  const assessedSkills = configuredSkills.filter((s) => !isSkillUnassessed(s));
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

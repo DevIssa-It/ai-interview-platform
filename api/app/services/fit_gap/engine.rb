@@ -9,7 +9,7 @@ module FitGap
       @vacancy   = vacancy
       @gemini_client = gemini_client || Gemini::HttpClient.new(
         model:   ENV.fetch('GEMINI_FLASH_MODEL', 'gemini-2.0-flash-001'),
-        timeout: 30
+        timeout: 10
       )
     end
 

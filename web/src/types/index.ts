@@ -87,6 +87,7 @@ export interface Portfolio {
 
 export interface PortfolioSkill {
   id: number;
+  portfolio_id?: number;
   skill_id?: number;
   skill_label: string;
   is_discovered: boolean;

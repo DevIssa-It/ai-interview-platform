@@ -38,16 +38,28 @@ export default function FitGapReportPage() {
       setGenerating(false);
       setErrorMessage(null);
     } catch (e: any) {
-      if (e?.response?.status === 404) {
+      const status = e?.response?.status;
+      if (status === 404) {
         try {
           await portfoliosApi.triggerFitGap(portfolio.id, Number(vacancyId));
           setGenerating(true);
-        } catch {
+        } catch (trigErr: any) {
           setGenerating(false);
-          setErrorMessage("Failed to initiate fit/gap report generation.");
+          const trigStatus = trigErr?.response?.status;
+          if (trigStatus === 422) {
+            setErrorMessage("Portfolio is incomplete and cannot generate a fit/gap report (422).");
+          } else if (trigStatus === 403) {
+            setErrorMessage("Access denied. You do not have permission to generate this report (403).");
+          } else {
+            setErrorMessage("Failed to initiate fit/gap report generation.");
+          }
         }
+      } else if (status === 403) {
+        setErrorMessage("Access denied. You do not have permission to view this report (403).");
+      } else if (status === 422) {
+        setErrorMessage("Unprocessable entity: Invalid parameters or incomplete portfolio (422).");
       } else {
-        setErrorMessage("Unable to fetch report data at this time.");
+        setErrorMessage("Unable to fetch report data at this time. Please check your connection.");
       }
     }
   }, [portfolio, vacancyId]);
@@ -55,8 +67,8 @@ export default function FitGapReportPage() {
   useEffect(() => {
     Promise.all([
       sessionsApi.getPortfolio(Number(sessionId)),
-      vacanciesApi.get(Number(vacancyId)).catch(() => null),
-      sessionsApi.get(Number(sessionId)).catch(() => null),
+      vacanciesApi.get(Number(vacancyId)),
+      sessionsApi.get(Number(sessionId)),
     ])
       .then(([pRes, vRes, sRes]) => {
         const data = pRes.data as any;
@@ -70,8 +82,17 @@ export default function FitGapReportPage() {
           setSession(sRes.data.session);
         }
       })
-      .catch(() => {
-        setErrorMessage("Failed to load interview context.");
+      .catch((err: any) => {
+        const status = err?.response?.status;
+        if (status === 404) {
+          setErrorMessage("Interview session, portfolio, or vacancy not found (404).");
+        } else if (status === 403) {
+          setErrorMessage("Access denied. You do not have permission to view this interview context (403).");
+        } else if (status === 422) {
+          setErrorMessage("Invalid parameters requested for fit/gap analysis (422).");
+        } else {
+          setErrorMessage("Failed to load interview context. Please check your connection.");
+        }
       })
       .finally(() => setLoading(false));
   }, [sessionId, vacancyId]);
@@ -90,8 +111,15 @@ export default function FitGapReportPage() {
       await portfoliosApi.regenerateFitGap(portfolio.id, Number(vacancyId));
       setReport(null);
       setGenerating(true);
-    } catch {
-      setErrorMessage("Could not request report regeneration. Please try again.");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 422) {
+        setErrorMessage("Cannot regenerate report: Portfolio has unaddressed or incomplete items (422).");
+      } else if (status === 403) {
+        setErrorMessage("Access denied. You do not have permission to regenerate this report (403).");
+      } else {
+        setErrorMessage("Could not request report regeneration. Please try again.");
+      }
     } finally {
       setRegenerating(false);
     }

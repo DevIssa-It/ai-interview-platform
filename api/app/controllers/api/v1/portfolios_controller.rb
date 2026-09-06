@@ -131,11 +131,15 @@ module Api
         portfolio = Portfolio.find(params[:id])
         report    = FitGapReport.find_by(portfolio_id: portfolio.id, vacancy_id: params[:vacancy_id])
 
-        if report.nil?
+        # Check if report is missing OR stale due to newer assessor override
+        latest_override_at = portfolio.assessor_overrides.maximum(:overridden_at)
+        is_stale = report && latest_override_at && report.generated_at < latest_override_at
+
+        if report.nil? || is_stale
           vacancy = Vacancy.find_by(id: params[:vacancy_id])
           if vacancy && portfolio.complete?
             report = FitGap::Engine.new(portfolio: portfolio, vacancy: vacancy).call
-          else
+          elsif report.nil?
             return json_error("Fit/gap report not found", :not_found)
           end
         end
