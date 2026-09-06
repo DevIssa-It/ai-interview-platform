@@ -42,8 +42,11 @@ module Exports
       pdf.font_size(12) { pdf.text "Skill Portfolio Report" }
       pdf.move_down 4
 
+      candidate_display = @session.candidate_name.presence || "Candidate ##{@session.candidate_id || @session.id}"
+
       pdf.font_size(10) do
-        pdf.text "Session: #{@session.id}"
+        pdf.text "Candidate: #{candidate_display}", style: :bold
+        pdf.text "Session ID: #{@session.id}"
         pdf.text "Duration: #{format_duration(@session.duration_seconds)}"
         pdf.text "Generated: #{Time.current.strftime('%Y-%m-%d %H:%M')}"
       end

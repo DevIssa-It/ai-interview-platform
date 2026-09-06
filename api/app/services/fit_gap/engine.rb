@@ -19,8 +19,8 @@ module FitGap
       narratives        = generate_narratives(skill_comparisons)
 
       report = FitGapReport.find_or_initialize_by(
-        portfolio_id: @portfolio.id,
-        vacancy_id:   @vacancy.id
+        portfolio: @portfolio,
+        vacancy:   @vacancy
       )
 
       report.update!(
@@ -60,9 +60,12 @@ module FitGap
           skill_id:        vacancy_skill.skill_id,
           candidate_level: candidate_level,
           expected_level:  expected_level,
+          required_level:  expected_level,
           result:          result,
           delta:           delta,
-          confidence:      portfolio_skill&.dig(:confidence)
+          confidence:      portfolio_skill&.dig(:confidence),
+          is_override:     portfolio_skill ? portfolio_skill[:overridden] : false,
+          overridden:      portfolio_skill ? portfolio_skill[:overridden] : false
         }
       end
 
